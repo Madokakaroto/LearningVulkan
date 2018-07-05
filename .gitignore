@@ -1,0 +1,7 @@
+msvc-build
+cmake-build-debug
+build
+.idea
+.vs
+.vscode
+.git
