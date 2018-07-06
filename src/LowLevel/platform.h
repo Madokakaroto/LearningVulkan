@@ -1,123 +1,40 @@
-﻿#include <GLFW/glfw3.h>
-#include <algorithm>
-#include <string>
-#include <stdexcept>
+﻿#pragma once
+#if defined(__MINGW32__)
+#ifdef __clang__
+#define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(_MSC_VER)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif		// end of mingw32
+#elif defined(WIN32)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
 
-class window_t;
-class managed_window_t;
+#include <GLFW/glfw3native.h>
 
-class window_t
+namespace wnd
 {
-protected:
-	friend class application_t;
-	
-	GLFWwindow* window_;
-	window_t(GLFWwindow* window)
-		: window_(window) {
-	}
-	
-public:
-	~window_t() noexcept
+
+#ifdef GLFW_EXPOSE_NATIVE_WIN32
+	struct native_interface
 	{
-		destroy();
-	}
-	
-	window_t(window_t const&) = delete;
-	window_t& operator=(window_t const&) = delete;
-	
-	window_t(window_t&& other) noexcept
-	{
-		swap(other);
-	}
-	
-	window_t& operator=(window_t&& other) noexcept
-	{
-		swap(other);
-		other.destroy();
-	}
-	
-private:
-	void swap(window_t& other) noexcept
-	{
-		std::swap(window_, other.window_);
-	}
-	
-	void destroy() noexcept
-	{
-		if(window_)
+		using handle_t = HWND;
+		
+		handle_t get_window_handle(GLFWwindow* window) const
 		{
-			glfwDestroyWindow(window_);
-			window_ = nullptr;
+			return glfwGetWin32Window(window);
 		}
-	}
-};
-
-class managed_window_t
-{
-	friend class application_t;
+	};
 	
-protected:
-	GLFWwindow* window_;
-	managed_window_t(GLFWwindow* window)
-		: window_(window)
-	{ }
-	
-public:
-	managed_window_t(managed_window_t const&) = default;
-	managed_window_t& operator=(managed_window_t const&) = default;
-	managed_window_t(managed_window_t&&) = default;
-	managed_window_t& operator=(managed_window_t&&) = default;
-};
-
-class application_t
-{
-protected:
-	application_t()
+#elif defined(GLFW_EXPOSE_NATIVE_X11)
+	struct native_interface
 	{
-		glfwInit();
-
-		// we create vulkan API ourselves
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	}
-
-public:
-	~application_t()
-	{
-		glfwTerminate();
-	}
-	
-	application_t(application_t const&) = delete;
-	application_t& operator=(application_t const&) = delete;
-	application_t(application_t&&) = delete;
-	application_t& operator=(application_t&&) = delete;
-	
-	static application_t& get() noexcept
-	{
-		static application_t app{};
-		return app;
-	}
-
-	window_t create_window(size_t w, size_t h, std::string name) const
-	{
-		return { create_window_impl(w, h, name) };
-	}
-	
-	managed_window_t create_managed_window(size_t w, size_t h, std::string name) const
-	{
-		return { create_window_impl(w, h, name) };
-	}
-	
-private:
-	GLFWwindow* create_window_impl(size_t width, size_t height, std::string const& name) const
-	{
-		auto window = glfwCreateWindow(
-			static_cast<int>(width),
-			static_cast<int>(height),
-			name.c_str(), nullptr, nullptr);
+		using handle_t = Window;
 		
-		if(nullptr == window)
-			throw std::runtime_error{ "Failed to create window_t" };
-		
-		return window;
-	}
-};
+		handle_t get_window_handle(GLFWwindow* window) const
+		{
+			return glfwGetX11Window(window);
+		}
+	};
+#endif
+	
+}

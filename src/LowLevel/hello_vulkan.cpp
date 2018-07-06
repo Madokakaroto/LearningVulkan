@@ -1,5 +1,4 @@
-﻿#include "platform.h"
-
+﻿#include "window.h"
 
 int main(void)
 {
